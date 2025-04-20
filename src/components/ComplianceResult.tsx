@@ -1,8 +1,16 @@
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, Check, Download } from "lucide-react";
+import { AlertTriangle, Check, Download, FileText } from "lucide-react";
 import { Button } from "./ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface ComplianceResultProps {
   report: {
@@ -20,9 +28,19 @@ interface ComplianceResultProps {
 
 const ComplianceResult = ({ report, onDownload }: ComplianceResultProps) => {
   const isPassing = report.score >= 70;
+  const getSeverityColor = (severity: string) => {
+    switch (severity) {
+      case "high":
+        return "destructive";
+      case "medium":
+        return "secondary";
+      default:
+        return "outline";
+    }
+  };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <Alert variant={isPassing ? "default" : "destructive"}>
         <div className="flex items-center gap-2">
           {isPassing ? (
@@ -41,35 +59,47 @@ const ComplianceResult = ({ report, onDownload }: ComplianceResultProps) => {
         </div>
       </Alert>
 
-      <div className="space-y-4">
-        {report.issues.map((issue, index) => (
-          <div 
-            key={index} 
-            className="border border-gray-200 rounded-lg p-4 space-y-2"
-          >
-            <div className="flex items-center justify-between">
-              <Badge
-                variant={
-                  issue.severity === "high"
-                    ? "destructive"
-                    : issue.severity === "medium"
-                    ? "secondary"
-                    : "outline"
-                }
-              >
-                {issue.severity.toUpperCase()} RISK
-              </Badge>
-            </div>
-            <p className="font-medium text-gray-900">{issue.description}</p>
-            <p className="text-sm text-gray-600">{issue.recommendation}</p>
-          </div>
-        ))}
-      </div>
+      <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6">
+        <h3 className="text-lg font-semibold mb-4 flex items-center">
+          <FileText className="mr-2 h-5 w-5" />
+          Detailed Analysis
+        </h3>
 
-      <Button onClick={onDownload} className="w-full mt-4" variant="outline">
-        <Download className="mr-2 h-4 w-4" />
-        Download Full Report
-      </Button>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[100px]">Severity</TableHead>
+              <TableHead>Issue</TableHead>
+              <TableHead>Required Action</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {report.issues.map((issue, index) => (
+              <TableRow key={index}>
+                <TableCell>
+                  <Badge variant={getSeverityColor(issue.severity)}>
+                    {issue.severity.toUpperCase()}
+                  </Badge>
+                </TableCell>
+                <TableCell className="font-medium">{issue.description}</TableCell>
+                <TableCell className="text-gray-600 dark:text-gray-400">
+                  {issue.recommendation}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+
+        <div className="mt-6 border-t pt-4 dark:border-gray-800">
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+            Analysis timestamp: {new Date(report.timestamp).toLocaleString()}
+          </p>
+          <Button onClick={onDownload} variant="outline" className="w-full">
+            <Download className="mr-2 h-4 w-4" />
+            Download Full Report
+          </Button>
+        </div>
+      </div>
     </div>
   );
 };
