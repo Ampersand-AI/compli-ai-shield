@@ -16,19 +16,19 @@ const ApiSettings = () => {
 
   useEffect(() => {
     // Load saved API key on component mount
-    const savedApiKey = localStorage.getItem("openrouter_api_key");
+    const savedApiKey = localStorage.getItem("openai_api_key");
     if (savedApiKey) {
       setApiKey(savedApiKey);
     }
   }, []);
 
-  const testOpenRouterConnection = async (key: string): Promise<boolean> => {
+  const testOpenAIConnection = async (key: string): Promise<boolean> => {
     setIsTestingConnection(true);
     setConnectionStatus("Testing connection...");
 
     try {
-      // Make a simple request to OpenRouter to check if API key is valid
-      const response = await fetch("https://openrouter.ai/api/v1/auth/key", {
+      // Make a simple request to OpenAI to check if API key is valid
+      const response = await fetch("https://api.openai.com/v1/models", {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${key}`,
@@ -41,7 +41,7 @@ const ApiSettings = () => {
         return true;
       } else {
         const data = await response.json();
-        setConnectionStatus(`Connection failed: ${data.error || "Invalid API key"}`);
+        setConnectionStatus(`Connection failed: ${data.error?.message || "Invalid API key"}`);
         return false;
       }
     } catch (error) {
@@ -65,15 +65,15 @@ const ApiSettings = () => {
     setIsSaving(true);
     
     // Test the connection before saving
-    const isConnectionSuccessful = await testOpenRouterConnection(apiKey);
+    const isConnectionSuccessful = await testOpenAIConnection(apiKey);
     
     if (isConnectionSuccessful) {
       // Store API key in localStorage
-      localStorage.setItem("openrouter_api_key", apiKey);
+      localStorage.setItem("openai_api_key", apiKey);
       
       toast({
         title: "API Key Saved",
-        description: "Your OpenRouter API key has been saved successfully and connection is verified.",
+        description: "Your OpenAI API key has been saved successfully and connection is verified.",
       });
     } else {
       toast({
@@ -82,7 +82,7 @@ const ApiSettings = () => {
         variant: "destructive",
       });
       // Still save the key even if connection test fails
-      localStorage.setItem("openrouter_api_key", apiKey);
+      localStorage.setItem("openai_api_key", apiKey);
     }
     
     setIsSaving(false);
@@ -104,10 +104,10 @@ const ApiSettings = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Key className="h-5 w-5" />
-              OpenRouter API Configuration
+              OpenAI API Configuration
             </CardTitle>
             <CardDescription>
-              Connect to OpenRouter to enable AI-powered compliance checking and risk management features.
+              Connect to OpenAI to enable AI-powered compliance checking and risk management features.
             </CardDescription>
           </CardHeader>
           
@@ -115,12 +115,12 @@ const ApiSettings = () => {
             <div className="space-y-4">
               <div className="space-y-2">
                 <label htmlFor="api-key" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  OpenRouter API Key
+                  OpenAI API Key
                 </label>
                 <Input
                   id="api-key"
                   type="password"
-                  placeholder="Enter your OpenRouter API key"
+                  placeholder="Enter your OpenAI API key"
                   value={apiKey}
                   onChange={(e) => setApiKey(e.target.value)}
                   className="w-full"
@@ -172,16 +172,16 @@ const ApiSettings = () => {
           <CardHeader>
             <CardTitle>API Usage Information</CardTitle>
             <CardDescription>
-              Learn how CompliAI uses the OpenRouter API to provide compliance features.
+              Learn how CompliAI uses the OpenAI API to provide compliance features.
             </CardDescription>
           </CardHeader>
           
           <CardContent>
             <div className="space-y-4 text-gray-700 dark:text-gray-300">
               <div>
-                <h3 className="font-semibold mb-2">What is OpenRouter?</h3>
+                <h3 className="font-semibold mb-2">What is OpenAI?</h3>
                 <p className="text-sm">
-                  OpenRouter is a service that provides access to various AI models. CompliAI uses these models for compliance scanning, gap analysis, and risk assessment.
+                  OpenAI provides powerful AI models that CompliAI uses for compliance scanning, gap analysis, and risk assessment.
                 </p>
               </div>
               
