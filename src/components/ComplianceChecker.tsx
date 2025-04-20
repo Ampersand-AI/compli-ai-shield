@@ -1,11 +1,12 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
-import { FileSearch, Download, FileX, Calendar, Bell } from "lucide-react";
+import { FileSearch, Download, FileX, Calendar, Bell, Link as LinkIcon } from "lucide-react";
+import { Link } from "react-router-dom";
 
 type Regulation = "gdpr" | "ccpa" | "hipaa" | "iso27001";
 
@@ -25,7 +26,14 @@ const ComplianceChecker = () => {
   const [regulations, setRegulations] = useState<Regulation[]>([]);
   const [isChecking, setIsChecking] = useState<boolean>(false);
   const [report, setReport] = useState<ComplianceReport | null>(null);
+  const [apiKeyExists, setApiKeyExists] = useState<boolean>(false);
   const { toast } = useToast();
+
+  useEffect(() => {
+    // Check if API key exists in localStorage on component mount
+    const apiKey = localStorage.getItem("openrouter_api_key");
+    setApiKeyExists(!!apiKey);
+  }, []);
 
   const handleRegulationToggle = (regulation: Regulation) => {
     setRegulations(prev => 
@@ -66,40 +74,49 @@ const ComplianceChecker = () => {
 
     setIsChecking(true);
     
-    // In a real implementation, this would make an API call to OpenRouter
-    // Simulating API call for demonstration purposes
-    setTimeout(() => {
-      const mockReport: ComplianceReport = {
-        score: Math.floor(Math.random() * 30) + 70, // Random score between 70-100
-        issues: [
-          {
-            severity: "high",
-            description: "Missing explicit user consent for data collection",
-            recommendation: "Add clear consent mechanisms before collecting user data"
-          },
-          {
-            severity: "medium",
-            description: "Unclear data retention policy",
-            recommendation: "Specify how long user data is retained and why"
-          },
-          {
-            severity: "low",
-            description: "Privacy policy lacks contact information",
-            recommendation: "Add DPO contact details to privacy policy"
-          }
-        ],
-        summary: "This document generally follows compliance guidelines but requires specific updates to meet all regulatory requirements. Key issues include consent mechanisms, retention policies, and contact information.",
-        timestamp: new Date().toISOString(),
-      };
-      
-      setReport(mockReport);
+    try {
+      // In a real implementation, this would make an API call to OpenRouter
+      // Simulating API call for demonstration purposes
+      setTimeout(() => {
+        const mockReport: ComplianceReport = {
+          score: Math.floor(Math.random() * 30) + 70, // Random score between 70-100
+          issues: [
+            {
+              severity: "high",
+              description: "Missing explicit user consent for data collection",
+              recommendation: "Add clear consent mechanisms before collecting user data"
+            },
+            {
+              severity: "medium",
+              description: "Unclear data retention policy",
+              recommendation: "Specify how long user data is retained and why"
+            },
+            {
+              severity: "low",
+              description: "Privacy policy lacks contact information",
+              recommendation: "Add DPO contact details to privacy policy"
+            }
+          ],
+          summary: "This document generally follows compliance guidelines but requires specific updates to meet all regulatory requirements. Key issues include consent mechanisms, retention policies, and contact information.",
+          timestamp: new Date().toISOString(),
+        };
+        
+        setReport(mockReport);
+        setIsChecking(false);
+        
+        toast({
+          title: "Compliance Check Complete",
+          description: `Compliance score: ${mockReport.score}%. ${mockReport.issues.length} issues found.`,
+        });
+      }, 3000);
+    } catch (error) {
       setIsChecking(false);
-      
       toast({
-        title: "Compliance Check Complete",
-        description: `Compliance score: ${mockReport.score}%. ${mockReport.issues.length} issues found.`,
+        title: "Error",
+        description: "Failed to process compliance check. Please try again.",
+        variant: "destructive",
       });
-    }, 3000);
+    }
   };
 
   const downloadReport = () => {
@@ -143,7 +160,7 @@ ${regulations.map(r => r.toUpperCase()).join(', ')}
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
+        <Card className="border-gray-200 shadow-sm">
           <CardContent className="pt-6">
             <h3 className="text-xl font-semibold mb-4 flex items-center">
               <FileSearch className="mr-2 h-5 w-5" />
@@ -214,10 +231,24 @@ ${regulations.map(r => r.toUpperCase()).join(', ')}
                 </div>
               </div>
               
+              {!apiKeyExists && (
+                <div className="p-3 bg-gray-50 border border-gray-200 rounded-md">
+                  <p className="text-sm text-gray-700 flex items-center mb-2">
+                    <LinkIcon className="h-4 w-4 mr-1" />
+                    API key required for compliance checking
+                  </p>
+                  <Link to="/api-settings">
+                    <Button variant="outline" size="sm" className="w-full">
+                      Configure API Key
+                    </Button>
+                  </Link>
+                </div>
+              )}
+              
               <div>
                 <Button 
                   onClick={checkCompliance} 
-                  disabled={isChecking}
+                  disabled={isChecking || !apiKeyExists}
                   className="w-full"
                 >
                   {isChecking ? (
@@ -237,7 +268,7 @@ ${regulations.map(r => r.toUpperCase()).join(', ')}
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="border-gray-200 shadow-sm">
           <CardContent className="pt-6">
             <h3 className="text-xl font-semibold mb-4 flex items-center">
               {report ? (
@@ -260,10 +291,10 @@ ${regulations.map(r => r.toUpperCase()).join(', ')}
                   
                   <div className={`px-3 py-1 rounded-full text-xs font-medium ${
                     report.score >= 90 
-                      ? "bg-green-100 text-green-800" 
+                      ? "bg-gray-100 text-gray-800" 
                       : report.score >= 70 
-                        ? "bg-yellow-100 text-yellow-800" 
-                        : "bg-red-100 text-red-800"
+                        ? "bg-gray-100 text-gray-800" 
+                        : "bg-gray-100 text-gray-800"
                   }`}>
                     Score: {report.score}%
                   </div>
@@ -283,10 +314,10 @@ ${regulations.map(r => r.toUpperCase()).join(', ')}
                       <div key={index} className="border rounded-md p-3">
                         <div className={`text-xs font-semibold inline-block px-2 py-1 rounded-full mb-2 ${
                           issue.severity === "high" 
-                            ? "bg-red-100 text-red-800" 
+                            ? "bg-gray-100 text-gray-800 border border-gray-300" 
                             : issue.severity === "medium" 
-                              ? "bg-yellow-100 text-yellow-800" 
-                              : "bg-blue-100 text-blue-800"
+                              ? "bg-gray-100 text-gray-800 border border-gray-300" 
+                              : "bg-gray-100 text-gray-800 border border-gray-300"
                         }`}>
                           {issue.severity.toUpperCase()}
                         </div>
