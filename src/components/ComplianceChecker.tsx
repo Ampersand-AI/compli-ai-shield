@@ -116,7 +116,14 @@ const ComplianceChecker = () => {
       let parsedAnalysis;
       
       try {
-        parsedAnalysis = JSON.parse(data.choices[0].message.content);
+        // The OpenAI response comes wrapped in content, and may include markdown code blocks
+        const content = data.choices[0].message.content;
+        
+        // Check if the response is wrapped in markdown code blocks and extract the JSON
+        const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+        const jsonString = jsonMatch ? jsonMatch[1] : content;
+        
+        parsedAnalysis = JSON.parse(jsonString);
       } catch (e) {
         console.error("Failed to parse OpenAI response", e);
         throw new Error('Invalid response format');
@@ -134,6 +141,7 @@ const ComplianceChecker = () => {
         description: `Compliance score: ${mockReport.score}%. ${mockReport.issues.length} issues found.`,
       });
     } catch (error) {
+      console.error("Error during compliance check:", error);
       toast({
         title: "Error",
         description: "Failed to process compliance check. Please try again.",
