@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowRight, ArrowLeft, CheckCircle } from "lucide-react";
+import { ArrowRight, ArrowLeft, CheckCircle, FileText, ShieldCheck, Users } from "lucide-react";
 import { 
   Tabs, 
   TabsContent, 
@@ -68,8 +68,8 @@ const AssessmentForm = () => {
       <Card className="w-full">
         <CardContent className="pt-6">
           <div className="flex flex-col items-center justify-center py-10 text-center">
-            <div className="rounded-full bg-green-100 p-3 dark:bg-green-900/20 mb-4">
-              <CheckCircle className="h-10 w-10 text-green-600 dark:text-green-500" />
+            <div className="rounded-full bg-gray-100 p-3 dark:bg-gray-900/20 mb-4">
+              <CheckCircle className="h-10 w-10 text-gray-600 dark:text-gray-500" />
             </div>
             <h3 className="text-2xl font-bold mb-2">Assessment Completed!</h3>
             <p className="text-gray-600 dark:text-gray-300 mb-6 max-w-md">
@@ -100,7 +100,7 @@ const AssessmentForm = () => {
         </div>
         <div className="w-full bg-gray-200 dark:bg-gray-700 h-2 rounded-full">
           <div 
-            className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+            className="bg-gray-600 h-2 rounded-full transition-all duration-300" 
             style={{ width: `${(step / totalSteps) * 100}%` }}
           ></div>
         </div>
@@ -110,7 +110,10 @@ const AssessmentForm = () => {
         <CardContent className="pt-6">
           {step === 1 && (
             <div>
-              <h3 className="text-xl font-semibold mb-4">Tell us about your business</h3>
+              <h3 className="text-xl font-semibold mb-4 flex items-center">
+                <FileText className="mr-2 h-5 w-5" />
+                Tell us about your business
+              </h3>
               <p className="text-gray-600 dark:text-gray-300 mb-6">
                 Let's start by understanding which regulations are most relevant to your organization.
               </p>
@@ -165,7 +168,10 @@ const AssessmentForm = () => {
 
           {step === 2 && (
             <div>
-              <h3 className="text-xl font-semibold mb-4">Data Handling Procedures</h3>
+              <h3 className="text-xl font-semibold mb-4 flex items-center">
+                <FileText className="mr-2 h-5 w-5" />
+                Data Handling Procedures
+              </h3>
               <p className="text-gray-600 dark:text-gray-300 mb-6">
                 Please describe how your organization collects, processes, and stores user data.
               </p>
@@ -180,7 +186,10 @@ const AssessmentForm = () => {
 
           {step === 3 && (
             <div>
-              <h3 className="text-xl font-semibold mb-4">Security Measures</h3>
+              <h3 className="text-xl font-semibold mb-4 flex items-center">
+                <ShieldCheck className="mr-2 h-5 w-5" />
+                Security Measures
+              </h3>
               <p className="text-gray-600 dark:text-gray-300 mb-6">
                 Tell us about the security measures your organization has implemented to protect sensitive data.
               </p>
@@ -195,7 +204,10 @@ const AssessmentForm = () => {
 
           {step === 4 && (
             <div>
-              <h3 className="text-xl font-semibold mb-4">Vendor Management</h3>
+              <h3 className="text-xl font-semibold mb-4 flex items-center">
+                <Users className="mr-2 h-5 w-5" />
+                Vendor Management
+              </h3>
               <p className="text-gray-600 dark:text-gray-300 mb-6">
                 Please provide information about how you manage vendor relationships and evaluate vendor compliance.
               </p>
@@ -210,7 +222,10 @@ const AssessmentForm = () => {
 
           {step === 5 && (
             <div>
-              <h3 className="text-xl font-semibold mb-4">Review & Submit</h3>
+              <h3 className="text-xl font-semibold mb-4 flex items-center">
+                <CheckCircle className="mr-2 h-5 w-5" />
+                Review & Submit
+              </h3>
               <p className="text-gray-600 dark:text-gray-300 mb-6">
                 Please review your responses before submitting the assessment.
               </p>
