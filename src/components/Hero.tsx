@@ -1,6 +1,6 @@
-
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Shield } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export const Hero = () => {
   return (
@@ -19,11 +19,14 @@ export const Hero = () => {
             cut costs, and stay ahead of regulatory changes. No more manual tracking
             or costly consultants.
           </p>
+          
           <div className="mt-10 flex items-center justify-center gap-x-6">
-            <Button size="lg" className="group">
-              Start Free Assessment
-              <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-            </Button>
+            <Link to="/assessment">
+              <Button size="lg" className="group">
+                Start Free Assessment
+                <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </Button>
+            </Link>
             <Button variant="outline" size="lg">
               Watch Demo
             </Button>
