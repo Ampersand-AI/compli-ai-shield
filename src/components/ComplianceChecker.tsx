@@ -31,7 +31,7 @@ const ComplianceChecker = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    const apiKey = localStorage.getItem("openrouter_api_key");
+    const apiKey = localStorage.getItem("openai_api_key");
     setApiKeyExists(!!apiKey);
   }, []);
 
@@ -73,11 +73,11 @@ const ComplianceChecker = () => {
       return;
     }
 
-    const apiKey = localStorage.getItem("openrouter_api_key");
+    const apiKey = localStorage.getItem("openai_api_key");
     if (!apiKey) {
       toast({
         title: "API Key Required",
-        description: "Please configure your OpenRouter API key in the settings",
+        description: "Please configure your OpenAI API key in the settings",
         variant: "destructive",
       });
       return;
@@ -86,34 +86,61 @@ const ComplianceChecker = () => {
     setIsChecking(true);
     
     try {
-      // Simulating API call with the selected regulations
-      const mockIssues = regulations.map(regulation => ({
-        severity: Math.random() > 0.7 ? "high" : Math.random() > 0.5 ? "medium" : "low" as "high" | "medium" | "low",
-        description: `${regulation.toUpperCase()} compliance issue detected`,
-        recommendation: `Update your ${regulation.toUpperCase()} compliance policies and documentation`
-      }));
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: "gpt-4-turbo-preview",
+          messages: [
+            {
+              role: "system",
+              content: `You are a compliance expert. Analyze the following document for compliance with ${regulations.join(", ")} regulations. Provide a detailed analysis with specific issues, their severity, and recommendations for changes. Format your response as JSON with the following structure: { score: number, issues: Array<{ severity: "high" | "medium" | "low", description: string, recommendation: string }>, summary: string }`
+            },
+            {
+              role: "user",
+              content: documentText
+            }
+          ],
+          temperature: 0.7
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to analyze document');
+      }
+
+      const data = await response.json();
+      let parsedAnalysis;
+      
+      try {
+        parsedAnalysis = JSON.parse(data.choices[0].message.content);
+      } catch (e) {
+        console.error("Failed to parse OpenAI response", e);
+        throw new Error('Invalid response format');
+      }
 
       const mockReport: ComplianceReport = {
-        score: Math.floor(Math.random() * 30) + 70,
-        issues: mockIssues,
-        summary: `Analysis completed for ${regulations.join(", ")} regulations.`,
+        ...parsedAnalysis,
         timestamp: new Date().toISOString(),
       };
       
       setReport(mockReport);
-      setIsChecking(false);
       
       toast({
         title: "Analysis Complete",
         description: `Compliance score: ${mockReport.score}%. ${mockReport.issues.length} issues found.`,
       });
     } catch (error) {
-      setIsChecking(false);
       toast({
         title: "Error",
         description: "Failed to process compliance check. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsChecking(false);
     }
   };
 
@@ -219,35 +246,46 @@ ${regulations.map(r => r.toUpperCase()).join(', ')}
           </CardContent>
         </Card>
         
-        <Card className="border-gray-200 shadow-sm">
-          <CardContent className="pt-6">
-            <h3 className="text-xl font-semibold mb-4 flex items-center">
-              <Calendar className="mr-2 h-5 w-5" />
-              Analysis Results
-            </h3>
-            
-            {isChecking ? (
-              <div className="flex items-center justify-center h-[300px]">
-                <div className="flex flex-col items-center space-y-4">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-                  <p className="text-sm text-gray-600">Analyzing document...</p>
-                </div>
-              </div>
-            ) : report ? (
+        {report && (
+          <Card className="border-gray-200 shadow-sm">
+            <CardContent className="pt-6">
+              <h3 className="text-xl font-semibold mb-4 flex items-center">
+                <Calendar className="mr-2 h-5 w-5" />
+                Analysis Results
+              </h3>
               <ComplianceResult report={report} onDownload={downloadReport} />
-            ) : (
-              <div className="flex flex-col items-center justify-center h-[300px] text-center">
-                <FileSearch className="h-12 w-12 text-gray-400 mb-4" />
-                <p className="text-gray-500 mb-2">
-                  No analysis results yet
-                </p>
-                <p className="text-sm text-gray-400">
-                  Enter your document text and select regulations to start the analysis
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
+
+        {!report && (
+          <Card className="border-gray-200 shadow-sm">
+            <CardContent className="pt-6">
+              <h3 className="text-xl font-semibold mb-4 flex items-center">
+                <Calendar className="mr-2 h-5 w-5" />
+                Analysis Results
+              </h3>
+              {isChecking ? (
+                <div className="flex items-center justify-center h-[300px]">
+                  <div className="flex flex-col items-center space-y-4">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+                    <p className="text-sm text-gray-600">Analyzing document...</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-[300px] text-center">
+                  <FileSearch className="h-12 w-12 text-gray-400 mb-4" />
+                  <p className="text-gray-500 mb-2">
+                    No analysis results yet
+                  </p>
+                  <p className="text-sm text-gray-400">
+                    Enter your document text and select regulations to start the analysis
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

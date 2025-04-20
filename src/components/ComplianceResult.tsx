@@ -3,6 +3,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, Check, Download, FileText, Eye, Copy } from "lucide-react";
 import { Button } from "./ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -107,20 +108,28 @@ const ComplianceResult = ({ report, onDownload }: ComplianceResultProps) => {
             Analysis timestamp: {new Date(report.timestamp).toLocaleString()}
           </p>
 
-          <Button
-            onClick={() => setShowSuggestions(!showSuggestions)}
-            variant="outline"
-            className="w-full"
-          >
-            <Eye className="mr-2 h-4 w-4" />
-            View Suggestions
-          </Button>
+          <div className="flex space-x-4">
+            <Button
+              onClick={() => setShowSuggestions(!showSuggestions)}
+              variant="outline"
+              className="flex-1"
+            >
+              <Eye className="mr-2 h-4 w-4" />
+              {showSuggestions ? "Hide Suggestions" : "View Suggestions"}
+            </Button>
+            <Button onClick={onDownload} variant="outline" className="flex-1">
+              <Download className="mr-2 h-4 w-4" />
+              Download Full Report
+            </Button>
+          </div>
+        </div>
+      </div>
 
-          {showSuggestions && (
-            <div className="space-y-4 mt-4">
-              <h4 className="font-medium text-gray-900 dark:text-gray-100">
-                Compliance Suggestions
-              </h4>
+      {showSuggestions && (
+        <Card className="border-gray-200 shadow-sm mt-6">
+          <CardContent className="pt-6">
+            <h4 className="text-lg font-semibold mb-4">Compliance Suggestions</h4>
+            <div className="space-y-4">
               {report.issues.map((issue, index) => (
                 <div
                   key={index}
@@ -155,14 +164,9 @@ const ComplianceResult = ({ report, onDownload }: ComplianceResultProps) => {
                 </div>
               ))}
             </div>
-          )}
-
-          <Button onClick={onDownload} variant="outline" className="w-full">
-            <Download className="mr-2 h-4 w-4" />
-            Download Full Report
-          </Button>
-        </div>
-      </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
