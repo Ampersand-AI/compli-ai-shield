@@ -1,7 +1,7 @@
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, Check, Download, FileText } from "lucide-react";
+import { AlertTriangle, Check, Download, FileText, Eye, Copy } from "lucide-react";
 import { Button } from "./ui/button";
 import {
   Table,
@@ -11,6 +11,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 interface ComplianceResultProps {
   report: {
@@ -27,7 +29,10 @@ interface ComplianceResultProps {
 }
 
 const ComplianceResult = ({ report, onDownload }: ComplianceResultProps) => {
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const { toast } = useToast();
   const isPassing = report.score >= 70;
+
   const getSeverityColor = (severity: string) => {
     switch (severity) {
       case "high":
@@ -37,6 +42,13 @@ const ComplianceResult = ({ report, onDownload }: ComplianceResultProps) => {
       default:
         return "outline";
     }
+  };
+
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast({
+      description: "Suggestion copied to clipboard",
+    });
   };
 
   return (
@@ -90,10 +102,61 @@ const ComplianceResult = ({ report, onDownload }: ComplianceResultProps) => {
           </TableBody>
         </Table>
 
-        <div className="mt-6 border-t pt-4 dark:border-gray-800">
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+        <div className="mt-6 border-t pt-4 dark:border-gray-800 space-y-4">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
             Analysis timestamp: {new Date(report.timestamp).toLocaleString()}
           </p>
+
+          <Button
+            onClick={() => setShowSuggestions(!showSuggestions)}
+            variant="outline"
+            className="w-full"
+          >
+            <Eye className="mr-2 h-4 w-4" />
+            View Suggestions
+          </Button>
+
+          {showSuggestions && (
+            <div className="space-y-4 mt-4">
+              <h4 className="font-medium text-gray-900 dark:text-gray-100">
+                Compliance Suggestions
+              </h4>
+              {report.issues.map((issue, index) => (
+                <div
+                  key={index}
+                  className="border border-gray-200 dark:border-gray-800 rounded-lg p-4 space-y-3"
+                >
+                  <div className="flex items-center justify-between">
+                    <Badge variant={getSeverityColor(issue.severity)}>
+                      {issue.severity.toUpperCase()}
+                    </Badge>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="font-medium">Non-Compliant Area:</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      {issue.description}
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <p className="font-medium">Suggested Change:</p>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleCopy(issue.recommendation)}
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 p-3 bg-gray-50 dark:bg-gray-800 rounded-md">
+                      {issue.recommendation}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
           <Button onClick={onDownload} variant="outline" className="w-full">
             <Download className="mr-2 h-4 w-4" />
             Download Full Report
