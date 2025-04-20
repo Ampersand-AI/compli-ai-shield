@@ -2,6 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
+import AssessmentForm from "@/components/AssessmentForm";
 
 const Assessment = () => {
   return (
@@ -16,7 +17,7 @@ const Assessment = () => {
           Compliance Assessment
         </h1>
         
-        <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6">
+        <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6 mb-8">
           <p className="text-lg text-gray-600 dark:text-gray-300 mb-6">
             Our AI-powered assessment will help identify potential compliance gaps in your organization's policies and procedures. The assessment typically takes 10-15 minutes to complete.
           </p>
@@ -33,12 +34,10 @@ const Assessment = () => {
                 <li>Evaluation of vendor management processes</li>
               </ul>
             </div>
-            
-            <Button size="lg" className="w-full sm:w-auto">
-              Begin Assessment
-            </Button>
           </div>
         </div>
+        
+        <AssessmentForm />
       </div>
     </div>
   );
