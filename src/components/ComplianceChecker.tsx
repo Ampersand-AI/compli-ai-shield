@@ -5,8 +5,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
-import { FileSearch, Download, FileX, Calendar, Bell, Link as LinkIcon } from "lucide-react";
+import { FileSearch, Calendar } from "lucide-react";
 import { Link } from "react-router-dom";
+import ComplianceResult from "./ComplianceResult";
 
 type Regulation = "gdpr" | "ccpa" | "hipaa" | "iso27001";
 
@@ -30,10 +31,20 @@ const ComplianceChecker = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check if API key exists in localStorage on component mount
     const apiKey = localStorage.getItem("openrouter_api_key");
     setApiKeyExists(!!apiKey);
   }, []);
+
+  // Real-time analysis when text or regulations change
+  useEffect(() => {
+    const debounceTimeout = setTimeout(() => {
+      if (documentText.trim() && regulations.length > 0 && apiKeyExists) {
+        checkCompliance();
+      }
+    }, 1000);
+
+    return () => clearTimeout(debounceTimeout);
+  }, [documentText, regulations]);
 
   const handleRegulationToggle = (regulation: Regulation) => {
     setRegulations(prev => 
@@ -75,40 +86,27 @@ const ComplianceChecker = () => {
     setIsChecking(true);
     
     try {
-      // In a real implementation, this would make an API call to OpenRouter
-      // Simulating API call for demonstration purposes
-      setTimeout(() => {
-        const mockReport: ComplianceReport = {
-          score: Math.floor(Math.random() * 30) + 70, // Random score between 70-100
-          issues: [
-            {
-              severity: "high",
-              description: "Missing explicit user consent for data collection",
-              recommendation: "Add clear consent mechanisms before collecting user data"
-            },
-            {
-              severity: "medium",
-              description: "Unclear data retention policy",
-              recommendation: "Specify how long user data is retained and why"
-            },
-            {
-              severity: "low",
-              description: "Privacy policy lacks contact information",
-              recommendation: "Add DPO contact details to privacy policy"
-            }
-          ],
-          summary: "This document generally follows compliance guidelines but requires specific updates to meet all regulatory requirements. Key issues include consent mechanisms, retention policies, and contact information.",
-          timestamp: new Date().toISOString(),
-        };
-        
-        setReport(mockReport);
-        setIsChecking(false);
-        
-        toast({
-          title: "Compliance Check Complete",
-          description: `Compliance score: ${mockReport.score}%. ${mockReport.issues.length} issues found.`,
-        });
-      }, 3000);
+      // Simulating API call with the selected regulations
+      const mockIssues = regulations.map(regulation => ({
+        severity: Math.random() > 0.7 ? "high" : Math.random() > 0.5 ? "medium" : "low" as "high" | "medium" | "low",
+        description: `${regulation.toUpperCase()} compliance issue detected`,
+        recommendation: `Update your ${regulation.toUpperCase()} compliance policies and documentation`
+      }));
+
+      const mockReport: ComplianceReport = {
+        score: Math.floor(Math.random() * 30) + 70,
+        issues: mockIssues,
+        summary: `Analysis completed for ${regulations.join(", ")} regulations.`,
+        timestamp: new Date().toISOString(),
+      };
+      
+      setReport(mockReport);
+      setIsChecking(false);
+      
+      toast({
+        title: "Analysis Complete",
+        description: `Compliance score: ${mockReport.score}%. ${mockReport.issues.length} issues found.`,
+      });
     } catch (error) {
       setIsChecking(false);
       toast({
@@ -185,56 +183,29 @@ ${regulations.map(r => r.toUpperCase()).join(', ')}
                   Select regulations to check against:
                 </label>
                 <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox 
-                      id="gdpr" 
-                      checked={regulations.includes("gdpr")}
-                      onCheckedChange={() => handleRegulationToggle("gdpr")}
-                    />
-                    <label htmlFor="gdpr" className="text-sm font-medium">
-                      GDPR (General Data Protection Regulation)
-                    </label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <Checkbox 
-                      id="ccpa" 
-                      checked={regulations.includes("ccpa")}
-                      onCheckedChange={() => handleRegulationToggle("ccpa")}
-                    />
-                    <label htmlFor="ccpa" className="text-sm font-medium">
-                      CCPA (California Consumer Privacy Act)
-                    </label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <Checkbox 
-                      id="hipaa" 
-                      checked={regulations.includes("hipaa")}
-                      onCheckedChange={() => handleRegulationToggle("hipaa")}
-                    />
-                    <label htmlFor="hipaa" className="text-sm font-medium">
-                      HIPAA (Health Insurance Portability and Accountability Act)
-                    </label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <Checkbox 
-                      id="iso27001" 
-                      checked={regulations.includes("iso27001")}
-                      onCheckedChange={() => handleRegulationToggle("iso27001")}
-                    />
-                    <label htmlFor="iso27001" className="text-sm font-medium">
-                      ISO 27001 (Information Security Management)
-                    </label>
-                  </div>
+                  {[
+                    { id: "gdpr", label: "GDPR (General Data Protection Regulation)" },
+                    { id: "ccpa", label: "CCPA (California Consumer Privacy Act)" },
+                    { id: "hipaa", label: "HIPAA (Health Insurance Portability and Accountability Act)" },
+                    { id: "iso27001", label: "ISO 27001 (Information Security Management)" }
+                  ].map(regulation => (
+                    <div key={regulation.id} className="flex items-center space-x-2">
+                      <Checkbox 
+                        id={regulation.id} 
+                        checked={regulations.includes(regulation.id as Regulation)}
+                        onCheckedChange={() => handleRegulationToggle(regulation.id as Regulation)}
+                      />
+                      <label htmlFor={regulation.id} className="text-sm font-medium">
+                        {regulation.label}
+                      </label>
+                    </div>
+                  ))}
                 </div>
               </div>
               
               {!apiKeyExists && (
                 <div className="p-3 bg-gray-50 border border-gray-200 rounded-md">
-                  <p className="text-sm text-gray-700 flex items-center mb-2">
-                    <LinkIcon className="h-4 w-4 mr-1" />
+                  <p className="text-sm text-gray-700 mb-2">
                     API key required for compliance checking
                   </p>
                   <Link to="/api-settings">
@@ -244,26 +215,6 @@ ${regulations.map(r => r.toUpperCase()).join(', ')}
                   </Link>
                 </div>
               )}
-              
-              <div>
-                <Button 
-                  onClick={checkCompliance} 
-                  disabled={isChecking || !apiKeyExists}
-                  className="w-full"
-                >
-                  {isChecking ? (
-                    <>
-                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Checking Compliance...
-                    </>
-                  ) : (
-                    "Check Compliance"
-                  )}
-                </Button>
-              </div>
             </div>
           </CardContent>
         </Card>
@@ -271,82 +222,27 @@ ${regulations.map(r => r.toUpperCase()).join(', ')}
         <Card className="border-gray-200 shadow-sm">
           <CardContent className="pt-6">
             <h3 className="text-xl font-semibold mb-4 flex items-center">
-              {report ? (
-                <Bell className="mr-2 h-5 w-5" />
-              ) : (
-                <FileX className="mr-2 h-5 w-5" />
-              )}
-              {report ? "Compliance Report" : "No Report Generated Yet"}
+              <Calendar className="mr-2 h-5 w-5" />
+              Analysis Results
             </h3>
             
-            {report ? (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <Calendar className="h-4 w-4 mr-1" />
-                    <span className="text-xs text-gray-500">
-                      {new Date(report.timestamp).toLocaleString()}
-                    </span>
-                  </div>
-                  
-                  <div className={`px-3 py-1 rounded-full text-xs font-medium ${
-                    report.score >= 90 
-                      ? "bg-gray-100 text-gray-800" 
-                      : report.score >= 70 
-                        ? "bg-gray-100 text-gray-800" 
-                        : "bg-gray-100 text-gray-800"
-                  }`}>
-                    Score: {report.score}%
-                  </div>
+            {isChecking ? (
+              <div className="flex items-center justify-center h-[300px]">
+                <div className="flex flex-col items-center space-y-4">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+                  <p className="text-sm text-gray-600">Analyzing document...</p>
                 </div>
-                
-                <div>
-                  <h4 className="text-sm font-medium mb-2">Summary</h4>
-                  <p className="text-sm text-gray-700 dark:text-gray-300">
-                    {report.summary}
-                  </p>
-                </div>
-                
-                <div>
-                  <h4 className="text-sm font-medium mb-2">Issues Found ({report.issues.length})</h4>
-                  <div className="space-y-2">
-                    {report.issues.map((issue, index) => (
-                      <div key={index} className="border rounded-md p-3">
-                        <div className={`text-xs font-semibold inline-block px-2 py-1 rounded-full mb-2 ${
-                          issue.severity === "high" 
-                            ? "bg-gray-100 text-gray-800 border border-gray-300" 
-                            : issue.severity === "medium" 
-                              ? "bg-gray-100 text-gray-800 border border-gray-300" 
-                              : "bg-gray-100 text-gray-800 border border-gray-300"
-                        }`}>
-                          {issue.severity.toUpperCase()}
-                        </div>
-                        <p className="text-sm font-medium">{issue.description}</p>
-                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                          <strong>Recommendation:</strong> {issue.recommendation}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                
-                <Button 
-                  onClick={downloadReport} 
-                  variant="outline" 
-                  className="w-full"
-                >
-                  <Download className="mr-2 h-4 w-4" />
-                  Download Report
-                </Button>
               </div>
+            ) : report ? (
+              <ComplianceResult report={report} onDownload={downloadReport} />
             ) : (
               <div className="flex flex-col items-center justify-center h-[300px] text-center">
-                <FileX className="h-12 w-12 text-gray-400 mb-4" />
-                <p className="text-gray-500 dark:text-gray-400 mb-2">
-                  No compliance report generated yet
+                <FileSearch className="h-12 w-12 text-gray-400 mb-4" />
+                <p className="text-gray-500 mb-2">
+                  No analysis results yet
                 </p>
-                <p className="text-sm text-gray-400 dark:text-gray-500">
-                  Enter your document text and check compliance to generate a report
+                <p className="text-sm text-gray-400">
+                  Enter your document text and select regulations to start the analysis
                 </p>
               </div>
             )}
