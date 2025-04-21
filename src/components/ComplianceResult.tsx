@@ -3,7 +3,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, Check, Download, FileText, ArrowLeft, Eye, Copy } from "lucide-react";
 import { Button } from "./ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -73,37 +73,48 @@ const ComplianceResult = ({ report, onDownload }: ComplianceResultProps) => {
               </div>
             </div>
           </Alert>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6">
-              <h3 className="text-lg font-semibold mb-4 flex items-center">
+
+          <Card className="shadow-sm border-gray-200 dark:border-gray-800">
+            <CardHeader className="pb-0">
+              <CardTitle className="flex items-center text-xl">
                 <FileText className="mr-2 h-5 w-5" />
                 Analysis Results
-              </h3>
-
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[100px]">Severity</TableHead>
-                    <TableHead>Issue</TableHead>
-                    <TableHead>Required Action</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {report.issues.map((issue, index) => (
-                    <TableRow key={index}>
-                      <TableCell>
-                        <Badge variant={getSeverityColor(issue.severity)}>
-                          {issue.severity.toUpperCase()}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="font-medium">{issue.description}</TableCell>
-                      <TableCell className="text-gray-600 dark:text-gray-400">
-                        {issue.recommendation}
-                      </TableCell>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-gray-50 dark:bg-gray-800/50">
+                      <TableHead className="w-[100px] font-semibold">Severity</TableHead>
+                      <TableHead className="font-semibold">Issue</TableHead>
+                      <TableHead className="font-semibold">Required Action</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {report.issues.map((issue, index) => (
+                      <TableRow key={index} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                        <TableCell>
+                          <Badge variant={getSeverityColor(issue.severity)} className="text-xs font-semibold">
+                            {issue.severity.toUpperCase()}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="font-medium text-gray-900 dark:text-gray-100">{issue.description}</TableCell>
+                        <TableCell className="text-gray-600 dark:text-gray-400">
+                          {issue.recommendation}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {report.issues.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={3} className="text-center py-6 text-gray-500">
+                          No compliance issues detected
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
 
               <div className="mt-6 border-t pt-4 dark:border-gray-800 space-y-4">
                 <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -112,8 +123,8 @@ const ComplianceResult = ({ report, onDownload }: ComplianceResultProps) => {
                 <div className="flex space-x-4">
                   <Button
                     onClick={() => setView("suggestions")}
-                    variant="outline"
-                    className="flex-1 border-gray-300 dark:border-gray-700"
+                    variant="default"
+                    className="flex-1"
                   >
                     <Eye className="mr-2 h-4 w-4" />
                     Show Suggestions
@@ -124,13 +135,11 @@ const ComplianceResult = ({ report, onDownload }: ComplianceResultProps) => {
                   </Button>
                 </div>
               </div>
-            </div>
-            {/* Empty space for symmetry in grid */}
-            <div className="hidden lg:block" />
-          </div>
+            </CardContent>
+          </Card>
         </>
       ) : (
-        // Suggestions Section ONLY
+        // Suggestions Section
         <Card className="border-gray-200 dark:border-gray-800 shadow-sm">
           <CardContent className="pt-6">
             <div className="flex items-center mb-6">
