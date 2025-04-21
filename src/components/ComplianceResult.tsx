@@ -30,7 +30,7 @@ interface ComplianceResultProps {
 }
 
 const ComplianceResult = ({ report, onDownload }: ComplianceResultProps) => {
-  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(true);
   const { toast } = useToast();
   const isPassing = report.score >= 70;
 
@@ -54,19 +54,19 @@ const ComplianceResult = ({ report, onDownload }: ComplianceResultProps) => {
 
   return (
     <div className="space-y-6">
-      <Alert variant={isPassing ? "default" : "destructive"}>
+      <Alert variant={isPassing ? "default" : "destructive"} className="border-2">
         <div className="flex items-center gap-2">
           {isPassing ? (
-            <Check className="h-5 w-5 text-gray-900" />
+            <Check className="h-5 w-5 text-gray-900 dark:text-white" />
           ) : (
             <AlertTriangle className="h-5 w-5" />
           )}
           <div>
-            <AlertTitle>
+            <AlertTitle className="text-lg font-semibold">
               {isPassing ? "Compliance Check Passed" : "Compliance Issues Detected"}
             </AlertTitle>
-            <AlertDescription>
-              Overall compliance score: {report.score}%
+            <AlertDescription className="text-base">
+              Overall compliance score: <span className="font-semibold">{report.score}%</span>
             </AlertDescription>
           </div>
         </div>
@@ -113,12 +113,12 @@ const ComplianceResult = ({ report, onDownload }: ComplianceResultProps) => {
               <Button
                 onClick={() => setShowSuggestions(!showSuggestions)}
                 variant="outline"
-                className="flex-1"
+                className="flex-1 border-gray-300 dark:border-gray-700"
               >
                 <Eye className="mr-2 h-4 w-4" />
                 {showSuggestions ? "Hide Suggestions" : "View Suggestions"}
               </Button>
-              <Button onClick={onDownload} variant="outline" className="flex-1">
+              <Button onClick={onDownload} variant="outline" className="flex-1 border-gray-300 dark:border-gray-700">
                 <Download className="mr-2 h-4 w-4" />
                 Download Full Report
               </Button>
@@ -126,57 +126,48 @@ const ComplianceResult = ({ report, onDownload }: ComplianceResultProps) => {
           </div>
         </div>
 
-        {/* Suggestions card always in layout but conditionally visible */}
-        <div className={showSuggestions ? "block" : "hidden lg:block lg:opacity-0"}>
-          <Card className="border-gray-200 shadow-sm h-full">
-            <CardContent className="pt-6">
-              <h4 className="text-lg font-semibold mb-4">Compliance Suggestions</h4>
-              {showSuggestions ? (
-                <div className="space-y-4 overflow-y-auto max-h-[500px]">
-                  {report.issues.map((issue, index) => (
-                    <div
-                      key={index}
-                      className="border border-gray-200 dark:border-gray-800 rounded-lg p-4 space-y-3"
-                    >
-                      <div className="flex items-center justify-between">
-                        <Badge variant={getSeverityColor(issue.severity)}>
-                          {issue.severity.toUpperCase()}
-                        </Badge>
-                      </div>
-                      <div className="space-y-2">
-                        <p className="font-medium">Non-Compliant Area:</p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          {issue.description}
-                        </p>
-                      </div>
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <p className="font-medium">Suggested Change:</p>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleCopy(issue.recommendation)}
-                          >
-                            <Copy className="h-4 w-4" />
-                          </Button>
-                        </div>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 p-3 bg-gray-50 dark:bg-gray-800 rounded-md">
-                          {issue.recommendation}
-                        </p>
-                      </div>
+        <Card className={`border-gray-200 dark:border-gray-800 shadow-sm h-full ${showSuggestions ? "" : "hidden lg:hidden"}`}>
+          <CardContent className="pt-6">
+            <h4 className="text-lg font-semibold mb-4">Compliance Suggestions</h4>
+            {showSuggestions && (
+              <div className="space-y-4 overflow-y-auto max-h-[500px]">
+                {report.issues.map((issue, index) => (
+                  <div
+                    key={index}
+                    className="border border-gray-200 dark:border-gray-800 rounded-lg p-4 space-y-3"
+                  >
+                    <div className="flex items-center justify-between">
+                      <Badge variant={getSeverityColor(issue.severity)}>
+                        {issue.severity.toUpperCase()}
+                      </Badge>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center h-[300px] text-center">
-                  <p className="text-gray-500 mb-2">
-                    Click "View Suggestions" to see detailed recommendations
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+                    <div className="space-y-2">
+                      <p className="font-medium">Non-Compliant Area:</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {issue.description}
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <p className="font-medium">Suggested Change:</p>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleCopy(issue.recommendation)}
+                        >
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 p-3 bg-gray-50 dark:bg-gray-800 rounded-md">
+                        {issue.recommendation}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

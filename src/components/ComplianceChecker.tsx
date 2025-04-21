@@ -93,7 +93,7 @@ const ComplianceChecker = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: "gpt-4-turbo-preview",
+          model: "gpt-4o-mini",
           messages: [
             {
               role: "system",
@@ -193,7 +193,7 @@ ${regulations.map(r => r.toUpperCase()).join(', ')}
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card className="border-gray-200 shadow-sm">
+        <Card className="border-gray-200 dark:border-gray-800 shadow-sm">
           <CardContent className="pt-6">
             <h3 className="text-xl font-semibold mb-4 flex items-center">
               <FileSearch className="mr-2 h-5 w-5" />
@@ -207,7 +207,7 @@ ${regulations.map(r => r.toUpperCase()).join(', ')}
                 </label>
                 <Textarea
                   placeholder="Paste your document text here..."
-                  className="min-h-[200px]"
+                  className="min-h-[200px] border-gray-300 dark:border-gray-700"
                   value={documentText}
                   onChange={(e) => setDocumentText(e.target.value)}
                 />
@@ -239,12 +239,12 @@ ${regulations.map(r => r.toUpperCase()).join(', ')}
               </div>
               
               {!apiKeyExists && (
-                <div className="p-3 bg-gray-50 border border-gray-200 rounded-md">
-                  <p className="text-sm text-gray-700 mb-2">
+                <div className="p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md">
+                  <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
                     API key required for compliance checking
                   </p>
                   <Link to="/api-settings">
-                    <Button variant="outline" size="sm" className="w-full">
+                    <Button variant="outline" size="sm" className="w-full border-gray-300 dark:border-gray-700">
                       Configure API Key
                     </Button>
                   </Link>
@@ -254,8 +254,8 @@ ${regulations.map(r => r.toUpperCase()).join(', ')}
           </CardContent>
         </Card>
         
-        {report && (
-          <Card className="border-gray-200 shadow-sm">
+        {report ? (
+          <Card className="border-gray-200 dark:border-gray-800 shadow-sm">
             <CardContent className="pt-6">
               <h3 className="text-xl font-semibold mb-4 flex items-center">
                 <Calendar className="mr-2 h-5 w-5" />
@@ -264,10 +264,8 @@ ${regulations.map(r => r.toUpperCase()).join(', ')}
               <ComplianceResult report={report} onDownload={downloadReport} />
             </CardContent>
           </Card>
-        )}
-
-        {!report && (
-          <Card className="border-gray-200 shadow-sm">
+        ) : (
+          <Card className="border-gray-200 dark:border-gray-800 shadow-sm">
             <CardContent className="pt-6">
               <h3 className="text-xl font-semibold mb-4 flex items-center">
                 <Calendar className="mr-2 h-5 w-5" />
@@ -276,17 +274,17 @@ ${regulations.map(r => r.toUpperCase()).join(', ')}
               {isChecking ? (
                 <div className="flex items-center justify-center h-[300px]">
                   <div className="flex flex-col items-center space-y-4">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-                    <p className="text-sm text-gray-600">Analyzing document...</p>
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-gray-100"></div>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">Analyzing document...</p>
                   </div>
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center h-[300px] text-center">
                   <FileSearch className="h-12 w-12 text-gray-400 mb-4" />
-                  <p className="text-gray-500 mb-2">
+                  <p className="text-gray-500 dark:text-gray-400 mb-2">
                     No analysis results yet
                   </p>
-                  <p className="text-sm text-gray-400">
+                  <p className="text-sm text-gray-400 dark:text-gray-500">
                     Enter your document text and select regulations to start the analysis
                   </p>
                 </div>
