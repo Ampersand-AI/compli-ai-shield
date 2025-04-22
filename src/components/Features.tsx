@@ -27,8 +27,8 @@ const features = [
 
 export const Features = () => {
   return (
-    <div className="py-24 sm:py-32 bg-gray-50 dark:bg-gray-900">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <div className="py-24">
+      <div className="mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
             Compliance Confidence, Powered by AI

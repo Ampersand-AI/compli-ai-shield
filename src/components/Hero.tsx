@@ -1,11 +1,25 @@
-
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Shield } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { useState } from "react";
+import { AuthDialog } from "@/components/auth/AuthDialog";
 
 export const Hero = () => {
+  const { user } = useAuth();
+  const [showAuthDialog, setShowAuthDialog] = useState(false);
+  const navigate = useNavigate();
+
+  const handleAssessmentClick = () => {
+    if (user) {
+      navigate("/assessment");
+    } else {
+      setShowAuthDialog(true);
+    }
+  };
+
   return (
-    <div className="relative overflow-hidden bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-background py-20 sm:py-32">
+    <div className="relative overflow-hidden py-20">
       <div className="absolute inset-0 bg-[url('/lovable-uploads/adf712c1-1833-455b-9c00-599fdf91c4b4.png')] bg-no-repeat bg-cover opacity-10"></div>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="text-center max-w-3xl mx-auto">
@@ -23,18 +37,25 @@ export const Hero = () => {
           </p>
           
           <div className="mt-10 flex items-center justify-center gap-x-6">
-            <Link to="/assessment">
-              <Button size="lg" className="group bg-gray-900 hover:bg-gray-800 text-white">
-                Start Free Assessment
-                <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-              </Button>
-            </Link>
+            <Button 
+              size="lg" 
+              className="group bg-gray-900 hover:bg-gray-800 text-white"
+              onClick={handleAssessmentClick}
+            >
+              Start Free Assessment
+              <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </Button>
             <Button variant="outline" size="lg" className="border-gray-200 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800">
               Watch Demo
             </Button>
           </div>
         </div>
       </div>
+
+      <AuthDialog
+        isOpen={showAuthDialog}
+        onClose={() => setShowAuthDialog(false)}
+      />
     </div>
   );
 };

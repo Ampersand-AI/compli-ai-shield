@@ -1,13 +1,12 @@
-
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
-import { FileSearch, Calendar } from "lucide-react";
-import { Link } from "react-router-dom";
+import { FileSearch, Calendar, FileText, Upload } from "lucide-react";
 import ComplianceResult from "./ComplianceResult";
+import OpenAI from "openai";
 
 type Regulation = "gdpr" | "ccpa" | "hipaa" | "iso27001";
 
@@ -27,29 +26,12 @@ const ComplianceChecker = () => {
   const [regulations, setRegulations] = useState<Regulation[]>([]);
   const [isChecking, setIsChecking] = useState<boolean>(false);
   const [report, setReport] = useState<ComplianceReport | null>(null);
-  const [apiKeyExists, setApiKeyExists] = useState<boolean>(false);
   const { toast } = useToast();
 
-  useEffect(() => {
-    const apiKey = localStorage.getItem("openai_api_key");
-    setApiKeyExists(!!apiKey);
-  }, []);
-
-  // Real-time analysis when text or regulations change
-  useEffect(() => {
-    const debounceTimeout = setTimeout(() => {
-      if (documentText.trim() && regulations.length > 0 && apiKeyExists) {
-        checkCompliance();
-      }
-    }, 1000);
-
-    return () => clearTimeout(debounceTimeout);
-  }, [documentText, regulations]);
-
   const handleRegulationToggle = (regulation: Regulation) => {
-    setRegulations(prev => 
-      prev.includes(regulation) 
-        ? prev.filter(r => r !== regulation) 
+    setRegulations((prev) =>
+      prev.includes(regulation)
+        ? prev.filter((r) => r !== regulation)
         : [...prev, regulation]
     );
   };
@@ -73,69 +55,81 @@ const ComplianceChecker = () => {
       return;
     }
 
-    const apiKey = localStorage.getItem("openai_api_key");
-    if (!apiKey) {
-      toast({
-        title: "API Key Required",
-        description: "Please configure your OpenAI API key in the settings",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsChecking(true);
-    
-    try {
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: "gpt-4o-mini",
-          messages: [
-            {
-              role: "system",
-              content: `You are a compliance expert. Analyze the following document for compliance with ${regulations.join(", ")} regulations. Provide a detailed analysis with specific issues, their severity, and recommendations for changes. Format your response as JSON with the following structure: { score: number, issues: Array<{ severity: "high" | "medium" | "low", description: string, recommendation: string }>, summary: string }`
-            },
-            {
-              role: "user",
-              content: documentText
-            }
-          ],
-          temperature: 0.7
-        })
-      });
 
-      if (!response.ok) {
-        throw new Error('Failed to analyze document');
+    try {
+      const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY;
+
+      if (!apiKey) {
+        throw new Error("OpenRouter API key is not configured");
       }
 
-      const data = await response.json();
+      const openai = new OpenAI({
+        baseURL: "https://openrouter.ai/api/v1",
+        apiKey: apiKey,
+        dangerouslyAllowBrowser: true,
+        defaultHeaders: {
+          "HTTP-Referer": window.location.origin,
+          "X-Title": "CompliAI Shield",
+        },
+      });
+
+      const completion = await openai.chat.completions.create({
+        model: "meta-llama/llama-4-maverick:free",
+        messages: [
+          {
+            role: "system",
+            content: `You are a seasoned compliance and regulatory expert specializing in global frameworks such as ${regulations.join(
+              ", "
+            )}. Your task is to evaluate the user's document for alignment with these regulations.
+
+Analyze the document thoroughly, identify potential compliance issues, and assess their severity. Provide clear, actionable recommendations for each issue. Your tone should be professional, concise, and supportive—focused on guiding businesses toward compliance without alarmism.
+
+Respond in JSON format with the following structure:
+{
+  score: number (from 0 to 100, representing estimated compliance),
+  issues: Array<{
+    severity: "high" | "medium" | "low",
+    description: string,
+    recommendation: string
+  }>,
+  summary: string (a concise overview of key findings and overall compliance posture)
+}
+
+Avoid hallucinating or making assumptions not based on the text. If specific required sections or disclosures are missing, flag them as issues.
+
+Only return the JSON object. Do not include any additional commentary or explanation.`,
+          },
+          {
+            role: "user",
+            content: documentText,
+          },
+        ],
+        temperature: 0.4,
+      });
+
       let parsedAnalysis;
-      
+
       try {
-        // The OpenAI response comes wrapped in content, and may include markdown code blocks
-        const content = data.choices[0].message.content;
-        
+        const content = completion.choices[0].message.content;
+
         // Check if the response is wrapped in markdown code blocks and extract the JSON
         const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
         const jsonString = jsonMatch ? jsonMatch[1] : content;
-        
+
         parsedAnalysis = JSON.parse(jsonString);
       } catch (e) {
-        console.error("Failed to parse OpenAI response", e);
-        throw new Error('Invalid response format');
+        console.error("Failed to parse response", e);
+        throw new Error("Invalid response format");
       }
 
       const mockReport: ComplianceReport = {
         ...parsedAnalysis,
         timestamp: new Date().toISOString(),
       };
-      
+
       setReport(mockReport);
-      
+
       toast({
         title: "Analysis Complete",
         description: `Compliance score: ${mockReport.score}%. ${mockReport.issues.length} issues found.`,
@@ -144,7 +138,10 @@ const ComplianceChecker = () => {
       console.error("Error during compliance check:", error);
       toast({
         title: "Error",
-        description: "Failed to process compliance check. Please try again.",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to process compliance check. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -154,7 +151,7 @@ const ComplianceChecker = () => {
 
   const downloadReport = () => {
     if (!report) return;
-    
+
     const reportText = `
 CompliAI Compliance Report
 Generated: ${new Date(report.timestamp).toLocaleString()}
@@ -164,26 +161,32 @@ Summary:
 ${report.summary}
 
 Issues Found:
-${report.issues.map(issue => `
+${report.issues
+  .map(
+    (issue) => `
 Severity: ${issue.severity.toUpperCase()}
 Description: ${issue.description}
 Recommendation: ${issue.recommendation}
-`).join('\n')}
+`
+  )
+  .join("\n")}
 
 Regulations Checked:
-${regulations.map(r => r.toUpperCase()).join(', ')}
+${regulations.map((r) => r.toUpperCase()).join(", ")}
     `;
-    
-    const blob = new Blob([reportText], { type: 'text/plain' });
+
+    const blob = new Blob([reportText], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
-    a.download = `compliance-report-${new Date().toISOString().split('T')[0]}.txt`;
+    a.download = `compliance-report-${
+      new Date().toISOString().split("T")[0]
+    }.txt`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    
+
     toast({
       title: "Report Downloaded",
       description: "Your compliance report has been downloaded successfully",
@@ -194,26 +197,35 @@ ${regulations.map(r => r.toUpperCase()).join(', ')}
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="border-gray-200 dark:border-gray-800 shadow-sm">
-          <CardContent className="pt-6">
+          <CardContent className="pt-6 h-full flex flex-col">
             <h3 className="text-xl font-semibold mb-4 flex items-center">
               <FileSearch className="mr-2 h-5 w-5" />
               Document Analysis
             </h3>
             
-            <div className="space-y-4">
-              <div>
+            <div className="flex-1 flex flex-col min-h-[500px]">
+              <div className="flex-1 relative">
                 <label className="block text-sm font-medium mb-2">
                   Enter document text to check for compliance:
                 </label>
                 <Textarea
-                  placeholder="Paste your document text here..."
-                  className="min-h-[200px] border-gray-300 dark:border-gray-700"
+                  className="h-full min-h-[300px] border-gray-300 dark:border-gray-700 resize-none"
                   value={documentText}
                   onChange={(e) => setDocumentText(e.target.value)}
                 />
+                {!documentText && (
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="flex flex-col items-center justify-center space-y-2 bg-white dark:bg-gray-900 p-4 rounded-lg">
+                      <Upload className="h-12 w-12 text-gray-400" />
+                      <p className="text-gray-500 dark:text-gray-400 text-sm">
+                        Paste your document text here
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
               
-              <div>
+              <div className="mt-8">
                 <label className="block text-sm font-medium mb-2">
                   Select regulations to check against:
                 </label>
@@ -237,23 +249,18 @@ ${regulations.map(r => r.toUpperCase()).join(', ')}
                   ))}
                 </div>
               </div>
-              
-              {!apiKeyExists && (
-                <div className="p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md">
-                  <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
-                    API key required for compliance checking
-                  </p>
-                  <Link to="/api-settings">
-                    <Button variant="outline" size="sm" className="w-full border-gray-300 dark:border-gray-700">
-                      Configure API Key
-                    </Button>
-                  </Link>
-                </div>
-              )}
+
+              <Button 
+                onClick={checkCompliance}
+                className="w-full mt-6 bg-gray-900 hover:bg-gray-800 text-white dark:bg-gray-800 dark:hover:bg-gray-700"
+                disabled={isChecking || !documentText.trim() || regulations.length === 0}
+              >
+                {isChecking ? "Analyzing Document..." : "Start Analysis"}
+              </Button>
             </div>
           </CardContent>
         </Card>
-        
+
         {report ? (
           <Card className="border-gray-200 dark:border-gray-800 shadow-sm">
             <CardContent className="pt-6">
@@ -275,7 +282,9 @@ ${regulations.map(r => r.toUpperCase()).join(', ')}
                 <div className="flex items-center justify-center h-[300px]">
                   <div className="flex flex-col items-center space-y-4">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-gray-100"></div>
-                    <p className="text-sm text-gray-600 dark:text-gray-300">Analyzing document...</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">
+                      Analyzing document...
+                    </p>
                   </div>
                 </div>
               ) : (
@@ -285,7 +294,8 @@ ${regulations.map(r => r.toUpperCase()).join(', ')}
                     No analysis results yet
                   </p>
                   <p className="text-sm text-gray-400 dark:text-gray-500">
-                    Enter your document text and select regulations to start the analysis
+                    Enter your document text and select regulations to start the
+                    analysis
                   </p>
                 </div>
               )}

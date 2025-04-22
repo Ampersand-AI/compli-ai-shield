@@ -4,7 +4,7 @@ import { Features } from "@/components/Features";
 
 const Index = () => {
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-950">
+    <div className="min-h-screen bg-white">
       <Hero />
       <Features />
     </div>

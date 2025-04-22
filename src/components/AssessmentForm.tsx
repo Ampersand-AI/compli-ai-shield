@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,7 +18,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { Check, Clipboard, FileText } from "lucide-react";
-import { Link } from "react-router-dom";
 
 const formSchema = z.object({
   organization: z.string().min(1, { message: "Organization name is required" }),
@@ -43,7 +41,6 @@ const AssessmentForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [assessmentResult, setAssessmentResult] = useState<string | null>(null);
   const { toast } = useToast();
-  const [apiKeyExists, setApiKeyExists] = useState<boolean>(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -58,27 +55,10 @@ const AssessmentForm = () => {
     },
   });
 
-  // Check if OpenAI API key exists
-  useEffect(() => {
-    const apiKey = localStorage.getItem("openai_api_key");
-    setApiKeyExists(!!apiKey);
-  }, []);
-
   const onSubmit = async (data: FormValues) => {
-    if (!apiKeyExists) {
-      toast({
-        title: "API Key Required",
-        description: "Please configure your OpenAI API key in the settings",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsSubmitting(true);
     
     try {
-      const apiKey = localStorage.getItem("openai_api_key");
-      
       const prompt = `
         I need a compliance assessment for the following organization:
         
@@ -102,11 +82,11 @@ const AssessmentForm = () => {
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${apiKey}`,
+          'Authorization': `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: "gpt-4o-mini",
+          model: "gpt-4",
           messages: [
             {
               role: "system",
@@ -343,26 +323,13 @@ const AssessmentForm = () => {
                   )}
                 />
                 
-                {!apiKeyExists ? (
-                  <div className="p-4 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md">
-                    <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
-                      API key required for assessment
-                    </p>
-                    <Link to="/api-settings">
-                      <Button variant="outline" size="sm" className="w-full border-gray-300 dark:border-gray-700">
-                        Configure API Key
-                      </Button>
-                    </Link>
-                  </div>
-                ) : (
-                  <Button 
-                    type="submit" 
-                    className="w-full bg-gray-900 hover:bg-gray-800 text-white dark:bg-gray-800 dark:hover:bg-gray-700" 
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? "Generating Assessment..." : "Submit Assessment"}
-                  </Button>
-                )}
+                <Button 
+                  type="submit" 
+                  className="w-full bg-gray-900 hover:bg-gray-800 text-white dark:bg-gray-800 dark:hover:bg-gray-700" 
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Generating Assessment..." : "Submit Assessment"}
+                </Button>
               </form>
             </Form>
           </CardContent>
