@@ -1,58 +1,67 @@
-import { createContext, useContext, useState, useEffect } from "react";
-
-interface User {
-  email: string;
-  id: string;
-}
+import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { supabase } from '../lib/supabase';
+import { Session, User } from '@supabase/supabase-js';
 
 interface AuthContextType {
-  user: User | null;
-  isLoading: boolean;
+  user: (User & { username?: string }) | null;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
-// Export the context with proper typing
-export const AuthContext = createContext<AuthContextType>({} as AuthContextType);
+const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<(User & { username?: string }) | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check for existing session
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setIsLoading(false);
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    // In a real app, you would make an API call here
-    // This is a mock implementation
-    const mockUser = { email, id: "mock-user-id" };
-    localStorage.setItem("user", JSON.stringify(mockUser));
-    setUser(mockUser);
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    if (error) throw error;
   };
 
   const signUp = async (email: string, password: string) => {
-    // In a real app, you would make an API call here
-    // This is a mock implementation
-    const mockUser = { email, id: "mock-user-id" };
-    localStorage.setItem("user", JSON.stringify(mockUser));
-    setUser(mockUser);
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+    if (error) throw error;
   };
 
   const signOut = async () => {
-    localStorage.removeItem("user");
-    setUser(null);
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
   };
 
+  if (loading) {
+    return null;
+  }
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ user, signIn, signUp, signOut }}>
       {children}
     </AuthContext.Provider>
   );
-} 
+}
+
+export const useAuth = () => useContext(AuthContext); 

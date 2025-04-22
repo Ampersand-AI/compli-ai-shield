@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Shield } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/contexts/AuthContext";
 import { useState } from "react";
 import { AuthDialog } from "@/components/auth/AuthDialog";
 

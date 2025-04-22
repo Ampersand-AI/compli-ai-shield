@@ -1,22 +1,26 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { AuthDialog } from "@/components/auth/AuthDialog";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/contexts/AuthContext";
+import { ProfileDropdown } from "@/components/auth/ProfileDropdown";
+import { User } from "lucide-react";
 
 const Navbar = () => {
-  const [showAuthDialog, setShowAuthDialog] = useState(false);
+  const { user } = useAuth();
+  const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
   const [initialTab, setInitialTab] = useState<"signin" | "signup">("signin");
-  const { user, signOut } = useAuth();
+  const location = useLocation();
+  const isAssessmentPage = location.pathname === "/assessment";
 
   const handleSignInClick = () => {
     setInitialTab("signin");
-    setShowAuthDialog(true);
+    setIsAuthDialogOpen(true);
   };
 
   const handleSignUpClick = () => {
     setInitialTab("signup");
-    setShowAuthDialog(true);
+    setIsAuthDialogOpen(true);
   };
 
   return (
@@ -35,39 +39,33 @@ const Navbar = () => {
           </span>
         </Link>
 
-        {/* Navigation Links */}
-        <div className="hidden md:flex items-center space-x-8">
-          <Link to="/features" className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">
-            Features
-          </Link>
-          <Link to="/benefits" className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">
-            Benefits
-          </Link>
-          <Link to="/testimonials" className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">
-            Testimonials
-          </Link>
-          <Link to="/pricing" className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">
-            Pricing
-          </Link>
-          {user && (
-            <>
-              <Link to="/assessment" className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">
-                Assessment
-              </Link>
-            </>
-          )}
-        </div>
+        {/* Navigation Links - Only show on non-assessment pages */}
+        {!isAssessmentPage && (
+          <div className="hidden md:flex items-center space-x-8">
+            <Link to="/features" className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">
+              Features
+            </Link>
+            <Link to="/benefits" className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">
+              Benefits
+            </Link>
+            <Link to="/testimonials" className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">
+              Testimonials
+            </Link>
+            <Link to="/pricing" className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">
+              Pricing
+            </Link>
+          </div>
+        )}
 
         {/* Auth Buttons */}
         <div className="flex items-center space-x-4">
+          {isAssessmentPage && (
+            <Link to="/pricing" className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">
+              Pricing
+            </Link>
+          )}
           {user ? (
-            <Button
-              variant="ghost"
-              className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
-              onClick={() => signOut()}
-            >
-              Sign Out
-            </Button>
+            <ProfileDropdown />
           ) : (
             <>
               <Button
@@ -89,8 +87,8 @@ const Navbar = () => {
       </div>
 
       <AuthDialog
-        isOpen={showAuthDialog}
-        onClose={() => setShowAuthDialog(false)}
+        isOpen={isAuthDialogOpen}
+        onClose={() => setIsAuthDialogOpen(false)}
         initialTab={initialTab}
       />
     </nav>
